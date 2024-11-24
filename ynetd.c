@@ -1,10 +1,10 @@
 /*
  *
- * Copyright (c) 2015-2017 Lorenz Panny
+ * Copyright (c) 2015-2024 Lorenz Panny
  *
- * This is ynetd version 0.1.2 (24 May 2017).
+ * This is ynetd version 2024.02.17.
  * Check for newer versions at https://yx7.cc/code.
- * Please report bugs to y@yx7.cc.
+ * Please report bugs to lorenz@yx7.cc.
  *
  * This program is released under the MIT license; see license.txt.
  *
@@ -29,7 +29,7 @@
 
 __attribute__((noreturn)) void version()
 {
-    printf("This is ynetd version 0.1.2 (24 May 2017).\n");
+    printf("This is ynetd version 2024.02.17.\n");
     exit(0);
 }
 
@@ -207,7 +207,7 @@ int bind_listen(struct config const cfg)
     union {
        struct sockaddr_in6 ipv6;
        struct sockaddr_in ipv4;
-    } addr;
+    } addr = {0};
     socklen_t addr_len;
 
     if (0 > (lsock = socket(cfg.family, SOCK_STREAM, 0)))
@@ -255,7 +255,11 @@ void handle_connection(struct config const cfg, int sock)
     }
     if (cfg.mem.set) {
         rlim.rlim_cur = rlim.rlim_max = cfg.mem.lim;
+#ifndef RLIMIT_AS
+        if (0 > setrlimit(RLIMIT_DATA, &rlim))
+#else
         if (0 > setrlimit(RLIMIT_AS, &rlim))
+#endif
             die("setrlimit");
     }
     if (cfg.proc.set) {
